@@ -2,10 +2,9 @@ package org.wisjedi.petstore.controllers;
 
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.hateoas.IanaLinkRelations;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.wisjedi.petstore.controllers.assemblers.UserModelAssembler;
 import org.wisjedi.petstore.exception.UserNotFoundException;
 import org.wisjedi.petstore.infrastructure.UserRepository;
@@ -18,7 +17,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-@RequestMapping("/v1/users")
+@RequestMapping("/v1/user")
 public class UserController {
 
     private final UserRepository repository;
@@ -41,5 +40,13 @@ public class UserController {
     @GetMapping("{username}")
     public EntityModel<User> getUserByUsername(@PathVariable(value = "username") String username) {
         return assembler.toModel(repository.findById(username).orElseThrow(() -> new UserNotFoundException(username)));
+    }
+
+    @PostMapping("/")
+    ResponseEntity<?> newUser(@RequestBody User user) {
+        EntityModel<User> entityModel = assembler.toModel(repository.save(user));
+        return ResponseEntity.created(
+                entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri()
+                ).body(entityModel);
     }
 }
